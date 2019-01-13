@@ -4,6 +4,8 @@ var middleware = require("../middleware");
 var User = require("../models/user.js");
 var passport = require("passport");
 var flash = require("connect-flash-plus");
+//Required to generate secure JSON webtokens for pass resets
+var jwt = require("jwt-simple");
 
 //================================================
 //APP EMAIL configuration (jackjack.blogapp@gmail.com)
@@ -86,7 +88,6 @@ router.get("/sendemail", function(req, res){
 
 //Finds user account and sends them a reset link to reset password
 router.post("/sendemail", function(req, res){
-  //If account exists then store the email address and send email
   req.app.locals.mailOptions.to = req.body.username;
   //Check that user exists in our database. If not, redirect back to reset page and flash error
   User.find({username: req.body.username}, function(err, user){
@@ -101,7 +102,16 @@ router.post("/sendemail", function(req, res){
           req.flash("error", "The user account does not exist in JackJack's Blog. Please create an account before continuing. For problems please contact jackjack.blogapp@gmail.com ");
           res.redirect("/signup");
         }else{
-        //Send email to the user
+        //Create one time use webtoken link by setting secret to user's pass hash + '-' + string. Once user resets their password the original sent linke made with old password wont work. Making this a one time use secure link
+        var payload = user[0]._id;
+        var time = payload.getTimestamp();
+        var pass = user[0].hash;
+        var secret = pass + '-' + time;
+        var token = jwt.encode(payload, secret);
+        var link = "/resetpass" + payload + token;
+        req.app.locals.mailOptions.context.secureLink ="http://localhost:3000/resetpass" + payload + "/" + token;
+        req.app.locals.mailOptions.context.user = user[0].firstName + user[0].lastName;
+        //
         req.app.locals.transporter.sendMail(req.app.locals.mailOptions, function (err, info) {
            if(err){
              console.log(err)

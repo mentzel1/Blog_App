@@ -22,6 +22,12 @@ var User = require("./models/user.js");
 var flash = require("connect-flash-plus");
 //Required configuration file for app to run
 var config = require("./config.js");
+//Required to generate secure JSON webtokens for pass resets
+var jwt = require("jwt-simple");
+//Required for sending emails from our app
+const nodemailer = require("nodemailer");
+//Plugin to nodemailer to generate html emails
+var hbs = require("nodemailer-express-handlebars");
 //import routes
 var blogpostRouter = require("./routes/blogpost.js");
 var commentRouter = require("./routes/comment.js");
@@ -101,6 +107,7 @@ passport.deserializeUser(User.deserializeUser());
 //Tell express to use flash (stored in session so need to put after session configuration above)
 app.use(flash());
 
+
 //===============================================
 //        SET LOCAL VAR FOR ROUTES
 //==============================================
@@ -112,11 +119,10 @@ app.use(function(req, res, next){
   next();
 });
 
+
 //================================================
 //        EMAIL CONFIGURATION
 //================================================
-//Required for sending emails from our app
-const nodemailer = require("nodemailer");
 //Configure transport service to send emails (set our gmail account here)
 var transporter = nodemailer.createTransport({
   service: "gmail",
@@ -125,12 +131,29 @@ var transporter = nodemailer.createTransport({
           pass: config.dev.app.emailPass
   }
 });
+//Configure handlebar
+var options = {
+    viewEngine: {
+        extname: '.hbs',
+        layoutsDir: 'views/email/',
+        defaultLayout : 'template',
+        partialsDir : 'views/partials/'
+    },
+    viewPath: 'views/email/',
+    extName: '.hbs'
+};
+//Attach plugin to transport to generate html emails
+transporter.use('compile', hbs(options));
 //Configure our email message to be sent
 const mailOptions = {
   from: "jackjack.blogapp@gmail.com",
   to: "",
   subject: "JackJack's Blog - Password Reset",
-  html: "<p>Please click on the following link to reset the password associated with your account: <a href = 'http://localhost:3000/resetpass'>Reset Link</a> </p>"
+  template: 'email_body',
+  context: {
+    secureLink : '',
+    user: ''
+  }
 };
 //Make our email configuration variables avaliable everywhere in our app
 app.locals.transporter = transporter;
