@@ -33,6 +33,7 @@ var blogpostRouter = require("./routes/blogpost.js");
 var commentRouter = require("./routes/comment.js");
 var authRouter = require("./routes/auth.js");
 
+
 //================================================
 //        APPLICATION SETUP
 //================================================
@@ -76,6 +77,7 @@ store.on('error', function(error) {
   assert.ifError(error);
   assert.ok(false);
 });
+
 
 //===============================================
 //        AUTHENTICATION SETUP
