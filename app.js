@@ -33,7 +33,7 @@ var blogpostRouter = require("./routes/blogpost.js");
 var commentRouter = require("./routes/comment.js");
 var authRouter = require("./routes/auth.js");
 
-
+var test;
 //================================================
 //        APPLICATION SETUP
 //================================================
